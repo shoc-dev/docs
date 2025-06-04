@@ -8,6 +8,9 @@
 # testing
 /coverage
 
+# nextra
+_pagefind/
+
 # next.js
 /.next/
 /out/

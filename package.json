@@ -1,0 +1,33 @@
+{
+  "name": "shoc-docs",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 11054 --turbopack",
+    "build": "next build && touch out/.nojekyll",
+    "postbuild": "pagefind --site .next/server/app --output-path out/_pagefind",
+    "start": "next start",
+    "serve": "npx serve@latest out",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "^15.3.3",
+    "nextra": "^4.2.17",
+    "nextra-theme-docs": "^4.2.17",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
+    "@tailwindcss/postcss": "^4.1.8",
+    "@types/node": "^20.17.57",
+    "@types/react": "^19.1.6",
+    "@types/react-dom": "^19.1.5",
+    "eslint": "^9.28.0",
+    "eslint-config-next": "15.3.3",
+    "gh-pages": "^6.3.0",
+    "pagefind": "^1.3.0",
+    "tailwindcss": "^4.1.8",
+    "typescript": "^5.8.3"
+  }
+}
