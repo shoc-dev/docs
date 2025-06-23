@@ -1,0 +1,50 @@
+import { Callout } from 'nextra/components'
+
+# MPI Support
+
+## What is MPI?
+
+**MPI (Message Passing Interface)** is a standardized and portable message-passing system designed to allow programs written in C, C++, or Python to run in parallel on distributed memory architectures. It is the de-facto standard for parallel programming in high-performance computing (HPC).
+
+**Common Use Cases for MPI:**
+MPI is widely used in scientific and engineering fields for computationally intensive tasks, including:
+* **Scientific Simulations:** Climate modeling, molecular dynamics, fluid dynamics, and astrophysical simulations.
+* **Numerical Analysis:** Solving large systems of equations, matrix operations, and optimization problems.
+* **Data Processing:** Large-scale data analysis, image processing, and machine learning (for certain types of parallel training).
+* **High-Performance Computing (HPC):** Any workload requiring tight coupling between processes and efficient communication across multiple compute nodes.
+
+## Running MPI Workloads with Shoc Platform
+
+Shoc Platform provides robust support for running your MPI workloads seamlessly on your attached Kubernetes clusters. This enables you to leverage the scalability and resource management capabilities of Kubernetes for your tightly coupled parallel applications.
+
+### Prerequisite: MPI Operator
+
+To enable MPI workload orchestration on your Kubernetes cluster through Shoc Platform, your Kubernetes cluster must have the **MPI Operator** installed. The MPI Operator is a Kubernetes native solution that makes it easier to run MPI jobs. It is part of the Kubeflow ecosystem.
+
+<Callout type="info" emoji="⚙️">
+**Kubernetes Cluster Requirement:**
+Ensure your Kubernetes cluster is online and correctly configured with Shoc Platform as described in the [Clusters](clusters) page before proceeding with the MPI Operator installation.
+</Callout>
+
+#### MPI Operator Installation
+
+You can install the MPI Operator on your Kubernetes cluster using `kubectl` from the Kubeflow manifests.
+For the latest stable release of the MPI Operator, you can apply the manifests directly from GitHub.
+
+```bash
+kubectl apply --server-side -f https://raw.githubusercontent.com/kubeflow/mpi-operator/master/deploy/v2beta1/mpi-operator.yaml
+```
+
+This command will deploy the necessary Custom Resource Definitions (CRDs) and controller for the MPI Operator into your Kubernetes cluster, allowing Shoc Platform to submit and manage MPI-specific job types.
+
+### Further Documentation
+
+For detailed information on the MPI Operator, its features, and advanced usage, please refer to the official Kubeflow documentation:
+
+* **MPI Operator User Guides:** [https://www.kubeflow.org/docs/components/training/mpi/](https://www.kubeflow.org/docs/components/training/mpi/)
+* **General Kubeflow Training Operators:** [https://www.kubeflow.org/docs/components/training/](https://www.kubeflow.org/docs/components/training/)
+
+For a deeper understanding of MPI programming and its concepts, you may find the following resources helpful:
+
+* **MPI Forum (Official Standard):** [https://www.mpi-forum.org/](https://www.mpi-forum.org/)
+* **Open MPI Project:** [https://www.open-mpi.org/](https://www.open-mpi.org/)

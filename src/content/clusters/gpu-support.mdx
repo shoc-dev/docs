@@ -1,0 +1,83 @@
+import { Callout } from 'nextra/components'
+
+# GPU Support
+
+Shoc Platform fully supports running GPU-accelerated workloads on your Kubernetes clusters, allowing you to leverage the immense computational power of NVIDIA GPUs for tasks such as Machine Learning training, scientific simulations, and data processing.
+
+---
+
+### Utilizing `nvidia.com/gpu` Resources
+
+To enable the use of `nvidia.com/gpu` resources within your Kubernetes cluster and allow Shoc Platform to schedule jobs requiring GPUs, you must install the **NVIDIA GPU Operator**. This operator automates the deployment and management of all necessary NVIDIA software components, including:
+
+* NVIDIA drivers
+* Container Runtime (nvidia-container-runtime)
+* Kubernetes device plugin for GPUs
+* DCGM (Data Center GPU Manager)
+* and more.
+
+<Callout type="info" emoji="⚠️">
+**Prerequisites:**
+
+* Your Kubernetes cluster must have **NVIDIA GPU hardware** available on its nodes.
+* Your Kubernetes cluster must be **online and attached** to Shoc Platform, as described in the [Clusters](clusters) page.
+</Callout>
+
+### Installing the NVIDIA GPU Operator
+
+The recommended method for installing the NVIDIA GPU Operator is via Helm. Ensure you have Helm installed on your machine where you run `kubectl` commands.
+
+1.  **Add the NVIDIA Helm Repository:**
+    First, add the official NVIDIA Helm chart repository:
+
+    ```bash
+    helm repo add nvdp https://helm.ngc.nvidia.com/nvidia
+    helm repo update
+    ```
+
+2.  **Create a Namespace for the GPU Operator:**
+    It's good practice to install the GPU Operator in its own namespace:
+
+    ```bash
+    kubectl create namespace gpu-operator
+    ```
+
+3.  **Install the NVIDIA GPU Operator:**
+    Now, install the GPU Operator using Helm. Replace `gpu-operator` with your desired namespace if you chose a different one.
+
+    ```bash
+    helm install --wait \
+      --generate-name \
+      -n gpu-operator nvdp/gpu-operator
+    ```
+
+    The `--wait` flag will make Helm wait until all components are deployed and ready. This process can take several minutes as it involves downloading large container images and installing drivers.
+
+### Verifying the Installation
+
+After the installation completes, you can verify that the NVIDIA GPU Operator components are running correctly and that your GPUs are exposed to Kubernetes:
+
+1.  **Check Pod Status:**
+    Ensure all pods in the `gpu-operator` namespace are running:
+
+    ```bash
+    kubectl get pods -n gpu-operator
+    ```
+    You should see various pods like `nvidia-driver-daemonset`, `nvidia-container-toolkit-daemonset`, `nvidia-device-plugin-daemonset`, etc., in a `Running` or `Completed` state.
+
+2.  **Verify GPU Resources on Nodes:**
+    Check that your Kubernetes nodes are reporting `nvidia.com/gpu` resources:
+
+    ```bash
+    kubectl get nodes -o json | jq '.items[].status.allocatable."nvidia.com/gpu"'
+    ```
+    This command should output the number of GPUs allocatable on your nodes (e.g., `"1"`, `"2"`). If it shows `null` or `0`, the GPU Operator might not be fully functional or your nodes might not have detected GPUs.
+
+Once `nvidia.com/gpu` resources are visible on your nodes, Shoc Platform will be able to schedule jobs that request these resources.
+
+### Further Documentation
+
+For the most up-to-date and comprehensive information on the NVIDIA GPU Operator, including troubleshooting and advanced configurations, please refer to the official NVIDIA documentation:
+
+* **NVIDIA GPU Operator Documentation:** [https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/overview.html](https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/overview.html)
+* **NVIDIA Container Toolkit (for low-level GPU access in containers):** [https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/overview.html](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/overview.html)
