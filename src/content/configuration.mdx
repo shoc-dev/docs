@@ -1,0 +1,75 @@
+# Configuration
+
+The Shoc CLI is designed to be flexible, allowing you to manage multiple Shoc Platform deployments, workspaces, and user accounts. This page details how the CLI's configuration works.
+
+---
+
+### Viewing Your Configuration
+
+After initializing the Shoc CLI (as described in the [Installation](/installation) section), you can inspect your current configuration in two ways:
+
+* **Using the CLI:**
+    Run the following command in your terminal:
+    ```bash
+    shoc config view
+    ```
+
+* **Directly in the Configuration File:**
+    Alternatively, you can view the configuration file directly, located at `~/.shoc/config.yaml`.
+
+### Understanding the Configuration File
+
+The `config.yaml` file is structured into two main sections: `providers` and `contexts`.
+
+#### Providers
+
+The `providers` section defines the Shoc Platform servers that your CLI interacts with. By default, when you initialize your configuration, it includes one provider named `global` which points to the public Shoc Platform deployment. However, you can add definitions for multiple private Shoc Platform deployments if needed.
+
+Here's an example of a provider definition:
+
+```yaml
+providers:
+  # A friendly name of the configured provider (defaults to 'global' for shoc.dev)
+  - name: global
+    # Root URL to the platform itself
+    url: https://shoc.dev
+    # The URL to the Shoc Platform API
+    api: https://api.shoc.dev
+    # URL to Shoc's SSO
+    identity: https://identity.shoc.dev
+```
+
+#### Contexts
+
+The `contexts` section allows you to manage multi-provider, multi-workspace, and multi-user scenarios, similar to how Kubernetes handles `kubeconfig`. Each context defines a specific configuration for interacting with Shoc Platform.
+
+Here's an example of a context definition:
+
+```yaml
+contexts:
+  # The name of the context (default value used is "default")
+  - name: default 
+    # Refers to a concrete provider defined in the 'providers' section
+    provider: global 
+    # The default workspace to use within this context
+    workspace: my-workspace 
+```
+
+**Important Note on Credentials:**
+Sensitive credentials, such as API tokens, are never stored directly in the `config.yaml` file. Instead, they are securely stored in your operating system's secure password storage (e.g., macOS Keychain, Windows Credential Manager, Linux `libsecret`).
+
+### Using Multiple Contexts and Workspaces
+
+The Shoc CLI provides flags to easily switch between different contexts or workspaces for specific commands without modifying your default configuration:
+
+* **Using a Different Context:**
+    To execute a command using a different context, use the `-c` or `--context` flag:
+    ```bash
+    shoc -c my-context jobs
+    ```
+
+* **Using a Different Workspace within a Context:**
+    To execute a command using a different workspace within your current or specified context, use the `-w` or `--workspace` flag:
+    ```bash
+    shoc -w my-other-workspace jobs
+    ```

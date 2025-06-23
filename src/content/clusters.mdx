@@ -1,0 +1,56 @@
+import { Callout } from 'nextra/components'
+
+# Clusters
+
+Shoc Platform is designed to orchestrate your computational workloads across multiple compute clusters. Currently, Shoc Platform primarily supports **self-provisioned Kubernetes clusters**. This means that before you can integrate a cluster with Shoc Platform, you must have a Kubernetes cluster already up and running and accessible.
+
+---
+
+### Attaching a New Cluster (Web UI)
+
+Once your Kubernetes cluster is ready, you can easily attach it to your Shoc Platform workspace via the web user interface:
+
+1.  Navigate to your desired workspace by going to **Workspace > `[your-workspace-name]`**.
+2.  From the left-hand navigation, select the **Clusters** page.
+3.  Click the "Add" or "Attach Cluster" button to open the configuration form.
+4.  You will need to provide the following details:
+    * **Name**: A unique, friendly name to identify this cluster within your workspace (e.g., `my-dev-cluster`, `gpu-cluster-us-east`).
+    * **Description**: An optional field where you can provide a brief description of the cluster, its purpose, or its specifications.
+    * **Type**: Select `Kubernetes`. This is the only cluster type currently supported for self-provisioned clusters.
+    * **Configuration**: For Kubernetes clusters, you must paste the **full content of your Kubeconfig file** into this field. This `kubeconfig` provides Shoc Platform with the necessary credentials and connection details to access and manage your cluster.
+
+<Callout type="info" emoji="🔒">
+**Secure Storage of Credentials:**
+Please be assured that your Kubeconfig and any other relevant sensitive credentials provided during cluster configuration are securely stored server-side in an encrypted form. They are never exposed directly after submission.
+</Callout>
+
+### Monitoring Cluster Status
+
+After successfully adding a cluster, you can monitor its status and details from its dedicated page:
+
+1.  Navigate to **Workspace > `[your-workspace-name]` > Clusters**.
+2.  Click on the name of the cluster you just added (e.g., `my-cluster`).
+
+On the cluster's detail page, you will see:
+* **Connectivity Status**: An indication of whether Shoc Platform can successfully connect to your Kubernetes cluster.
+* **Cluster Information**: Once a connection is established, you will see details about your cluster, such as available resources (CPU, Memory, GPU), a list of connected nodes, and their respective statuses.
+
+An "Online" status indicates that Shoc Platform has a stable connection to your cluster and it is ready to accept and run your jobs.
+
+### Reconfiguring a Cluster
+
+Should you need to update your cluster's configuration (e.g., if your `kubeconfig` changes or you want to update its description), you can do so from the cluster's dashboard:
+
+1.  Go to the specific cluster's detail page (**Workspace > `[your-workspace-name]` > Clusters > `[your-cluster-name]`**).
+2.  Look for the **Actions** menu (often represented by an ellipsis `...` or a gear icon).
+3.  Select **Configure** to open the configuration editor and make the necessary adjustments.
+
+### Listing Clusters (CLI)
+
+You can also view your attached clusters directly from the Shoc CLI:
+
+To list all clusters configured within your current workspace, run:
+
+```bash
+shoc clusters list
+```
