@@ -1,0 +1,106 @@
+---
+asIndexPage: true
+---
+
+import { Callout } from 'nextra/components'
+
+# Jobs
+
+This page describes how to define, build, and run computational jobs on a cluster registered with Shoc Platform. To follow these steps, ensure you have the [Shoc CLI](/installation) installed and a [cluster](/clusters) already configured in your workspace.
+
+---
+
+### 1. Package Creation: Building Container Images from Code
+
+Shoc Platform streamlines the process of preparing your code for execution by automatically making container images. This involves a **building** phase where your code is transformed into a deployable **Package**.
+
+#### The Building Phase
+
+The building process is initiated by providing your code along with a special manifest file named `build.shoc.yaml`. During the build:
+
+1.  Your code and the `build.shoc.yaml` manifest are uploaded to the Shoc Platform server.
+2.  The platform then builds a target container image based on your specifications.
+3.  This newly built image is securely stored in Shoc Platform's built-in container registry.
+
+The resulting artifact of a successful build is called a **Package**. A Package is an immutable, versioned container image ready to be deployed and run on any compatible cluster.
+
+#### Defining Your Build with `build.shoc.yaml`
+
+To build a Package, you must provide a `build.shoc.yaml` file that specifies how your code should be containerized. These manifest files are based on existing templates, which define the base image and common build behaviors.
+
+You can explore available templates and their variants at: [https://shoc.dev/templates](https://shoc.dev/templates)
+
+Let's consider a simple example: You have a project folder `my-project` containing a shell script named `entrypoint.sh`. This script will simply print some system information:
+
+**`my-project/entrypoint.sh`**
+```bash
+#!/bin/sh
+echo "Hello from Shoc Platform!"
+echo "Running on hostname: $(hostname)"
+echo "Current directory: $(pwd)"
+echo "User: $(whoami)"
+echo "OS: $(cat /etc/os-release | grep PRETTY_NAME | cut -d'=' -f2 | tr -d '"')"
+```
+
+To containerize this script using a lightweight Alpine Linux base, you would create a `build.shoc.yaml` file in the same `my-project` directory:
+
+**`my-project/build.shoc.yaml`**
+```yaml
+template: alpine:default
+spec:
+  entrypoint: ["./entrypoint.sh"]
+```
+
+* `template: alpine:default` specifies that this build should use the `default` variant of the `alpine` template. This template provides a minimal Alpine Linux base image.
+* `spec.entrypoint` defines the command that will be executed when the container starts. Here, it's set to run your `entrypoint.sh` script.
+
+More detailed options for configuring your `build.shoc.yaml` can be found in the documentation for each specific template and its variants. For our `alpine:default` example, you can find more information here: [https://shoc.dev/templates/alpine/variants/default](https://shoc.dev/templates/alpine/variants/default)
+
+#### Building the Package
+
+Once your `my-project` folder contains both `build.shoc.yaml` and `entrypoint.sh`, navigate into that folder in your terminal and execute the build command:
+
+```bash
+cd my-project
+shoc build
+```
+
+If the build process is successful, you will receive a success message, and your Package will be ready for submission.
+
+### 2. Running Jobs
+
+After a Package has been built, you can submit it to a registered cluster as a Job. Shoc Platform supports two primary runtime types for jobs, determined by the Package's template:
+
+* **`function`**: Used for simple, single-node tasks that don't require inter-process communication across multiple nodes. Our `alpine:default` example creates a Package with a `function` runtime.
+* **`mpi`**: Designed for tasks that are distributed using an MPI backend (e.g., OpenMPI, MPICH), requiring multi-node coordination.
+
+#### Submitting a Job with a Run Manifest
+
+To run a Job, you typically define another manifest file, `run.shoc.yaml`, in your project directory. This manifest specifies runtime parameters for your job, such as the target cluster.
+
+For our example, a simple `run.shoc.yaml` might look like this:
+
+**`my-project/run.shoc.yaml`**
+```yaml
+cluster: my-cluster
+```
+
+* `cluster: my-cluster` specifies that this job should be submitted to the cluster named `my-cluster` (assuming you have a cluster with that name configured in your workspace).
+
+#### Executing the Run Command
+
+With your `run.shoc.yaml` file in place, execute the run command from your project folder:
+
+```bash
+cd my-project
+shoc run
+```
+
+When you run `shoc run`:
+* The CLI will first check if a Package has already been built for your project. If a valid, cached version exists, it will use that.
+* If no Package exists or the local code has changed, it will automatically trigger a `shoc build` operation before proceeding.
+* Finally, a Job will be submitted to the specified cluster (`my-cluster` in this example).
+
+#### Tasks
+
+By default, Shoc Platform jobs are designed as **task arrays**. This powerful feature allows a single Shoc Job definition to run multiple, similar tasks of the same Package. This is particularly useful for parallelizing workloads where each task performs a part of a larger job, much like job arrays found in traditional HPC schedulers like Slurm.
