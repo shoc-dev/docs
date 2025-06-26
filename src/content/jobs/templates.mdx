@@ -1,0 +1,78 @@
+# Templates
+
+Templates are a core concept in Shoc Platform that bridge the gap between your raw code and executable container images. Their primary motivation is to empower users to effortlessly containerize their applications while ensuring a high level of security and adherence to best practices.
+
+---
+
+### Motivation and Security
+
+At their essence, Shoc Platform templates are specialized **Containerfile (Dockerfile) templates** combined with crucial metadata that dictates runtime configuration. This approach offers several key benefits:
+
+* **Minimized User Effort:** You don't need to be a Docker expert to containerize your code. Templates provide pre-configured environments tailored for common use cases.
+* **Enhanced Security:** Templates are designed with security in mind. They enforce:
+    * **Limited Capabilities:** By controlling what instructions can be executed during both build-time and run-time, templates reduce the attack surface.
+    * **Rootless Operations:** Templates are crafted to be built and run using rootless toolkits. This significantly hardens the building process, making it much more difficult for potential attackers to inject malicious commands or gain root access to the underlying system.
+
+### Anatomy of a Template: `alpine:default` Example
+
+Let's examine the `alpine:default` template, which is ideal for running simple, lightweight tasks. The core of a template is often its underlying `Containerfile` logic, which looks similar to a standard `Dockerfile` but includes templating variables:
+
+```dockerfile
+# Use the base image "alpine" with a configurable tag (default to latest)
+FROM docker.io/library/alpine:{{ tag ?? "latest" }}
+
+# Define environment variables for user and group IDs with a default value for uid and user
+ENV SHOC_UID={{ uid ?? system.uid }}
+ENV SHOC_USER={{ user ?? system.user }}
+
+# Create a non-root user with a specific UID and GID
+RUN addgroup \
+        --gid=$SHOC_UID \
+        $SHOC_USER \
+    && adduser \
+        --uid=$SHOC_UID \
+        --ingroup=$SHOC_USER \
+        --disabled-password \
+        $SHOC_USER
+
+# Set the working directory and ensure it has the right permissions
+WORKDIR /app
+RUN chown -R $SHOC_USER:$SHOC_USER /app
+
+# Copy all files into the /app directory
+COPY . /app
+
+# Optionally install additional packages if any are provided in the template
+{{ if packages && packages.size > 0 }}
+RUN apk add --no-cache {{ for package in packages }} {{ package }} {{ end }}
+{{ end }}
+
+# Ensure entrypoint is run from the shoc user
+USER $SHOC_UID
+
+# Set the entrypoint for the container as an array (required)
+ENTRYPOINT [{{ for cmd in entrypoint }} "{{ cmd }}"{{ if for.last == false }}, {{ end }}{{ end }}]
+```
+
+As you can observe, this `Containerfile` contains placeholders like `{{ tag ?? "latest" }}`, `{{ uid ?? system.uid }}`, and loops like `{{ for package in packages }}`. These are templating variables that allow for dynamic substitution during the build process.
+
+These variables are populated by the `spec` section within your `build.shoc.yaml` file. This gives you controlled flexibility over key aspects of your container:
+
+* **Non-root User Configuration:** You can control the UID and GID of the non-root user that your application will run as, enhancing security by limiting container privileges.
+* **Base Image Tag:** Specify the exact tag for the underlying base image (e.g., `alpine:3.18` instead of `alpine:latest`).
+* **Extra Packages:** Install additional operating system packages (e.g., `git`, `curl`) if your application requires them.
+* **Entrypoint:** Define the command that will be executed when your container starts, as seen in the [Jobs](jobs) page example.
+
+The Shoc Platform build process rigorously validates the parameters you provide in your `build.shoc.yaml`'s `spec` section against the template's allowed inputs, ensuring that only a secure and valid set of configurations can be used.
+
+### Contributing and Examples
+
+Shoc Platform encourages contributions, allowing users to create and share new templates tailored to specific use cases, languages, or application types.
+
+Here are some examples of templates available on Shoc Platform:
+
+* **`alpine:default`**: A minimalistic base image for running simple, single-node jobs, ideal for shell scripts or small utilities.
+* **`mpi:default`**: Provides a base environment configured to run MPI-based jobs, including common MPI runtimes like OpenMPI or MPICH. This template ensures your distributed workloads can leverage the MPI Operator on Kubernetes.
+* **`lammps:default`**: A specialized template that comes with the LAMMPS (Large-scale Atomic/Molecular Massively Parallel Simulator) package pre-installed, designed to be run using a distributed MPI runtime. This allows researchers to quickly deploy and scale molecular dynamics simulations.
+
+You can find more details and options for each template on the Shoc Platform website, for instance: [https://shoc.dev/templates/alpine/variants/default](https://shoc.dev/templates/alpine/variants/default).
