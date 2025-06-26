@@ -65,6 +65,53 @@ These variables are populated by the `spec` section within your `build.shoc.yaml
 
 The Shoc Platform build process rigorously validates the parameters you provide in your `build.shoc.yaml`'s `spec` section against the template's allowed inputs, ensuring that only a secure and valid set of configurations can be used.
 
+### Working with Templates via CLI
+
+The Shoc CLI provides convenient commands to help you discover and initialize templates for your projects.
+
+#### Listing Available Templates
+
+To see a comprehensive list of all supported templates and their available variants, use the `shoc templates list` command:
+
+```bash
+shoc templates list
+```
+
+This command will display names like `alpine:default`, `mpi:default`, `lammps:default`, and any other templates maintained by Shoc Platform or your organization.
+
+#### Initializing a `build.shoc.yaml` from a Template
+
+The `shoc templates init` command allows you to generate a `build.shoc.yaml` file pre-filled with the default `spec` fields for a chosen template. This is a great way to quickly start a new project with the correct manifest structure.
+
+For example, to generate a `build.shoc.yaml` based on the `alpine:default` template:
+
+```bash
+shoc templates init alpine:default
+```
+
+This command will create a `build.shoc.yaml` file in your current directory with the following content:
+
+```yaml
+# the template to reference
+template: alpine:default
+# the specification of the template
+spec:
+  # the tag to use for alpine image (optional, default: "latest")
+  tag: latest
+  # the uid of the user to be used in the container (optional, default: "1000")
+  uid: 1000
+  # the user name of the user to be used in the container (optional, default: "shoc")
+  user: shoc
+  # extra Alpine packages to install (optional, default: [])
+  packages: []
+  # the entrypoint of your program (executable and arguments)
+  entrypoint: []
+# the list of file patterns to exclude from the package (files will not be uploaded)
+ignore: []
+```
+
+You can then modify the `spec` fields (e.g., `entrypoint`, `packages`, `tag`) to customize the build according to your application's requirements. The `ignore` section allows you to specify file patterns (similar to `.gitignore`) that should be excluded from being uploaded to the server during the build process.
+
 ### Contributing and Examples
 
 Shoc Platform encourages contributions, allowing users to create and share new templates tailored to specific use cases, languages, or application types.

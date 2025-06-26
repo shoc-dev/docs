@@ -1,7 +1,9 @@
 import { MetaRecord } from "nextra"
 
 const pages: MetaRecord = {
-  templates: ''
+  templates: '',
+  packages: '',
+  running: ''
 }
 
 export default pages

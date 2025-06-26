@@ -1,0 +1,33 @@
+# Packages
+
+In the Shoc Platform, a **Package** is the fundamental execution unit for your jobs. Essentially, it is the containerized asset of your code, combined with essential runtime metadata, that is prepared to run on a cluster. Think of it as a deployable, versioned artifact of your application.
+
+---
+
+### Package Creation Process
+
+Whenever you execute a `shoc build` or `shoc run` command from your client machine, the following steps occur:
+
+1.  **File Upload**: All files present in your current working directory, along with the `build.shoc.yaml` manifest, are securely uploaded to the Shoc Platform server.
+2.  **Image Building**: On the server, a specialized module takes your uploaded files and the chosen template (as defined in `build.shoc.yaml`). It then combines these components to build a hardened container image.
+3.  **Secure Storage**: Upon a successful build, the resulting container image (your Package) is stored in Shoc Platform's integrated container registry. This registry is segregated, ensuring that packages are accessible only according to defined access levels and scopes.
+
+### Package Scopes: User and Workspace
+
+For robust security and access control, Packages in Shoc Platform can have one of two scopes: `user` or `workspace`. This determines who can access and utilize the built Package.
+
+* **User Scope**:
+    A Package built with `user` scope is private. It tells the Shoc Platform server that this specific Package can be accessed and used **only by the user who initiated its creation**. This is ideal for personal development, experimental work, or sensitive code that should not be shared.
+
+* **Workspace Scope**:
+    In contrast, Packages built with `workspace` scope are designed for collaboration. These Packages can be **shared with all other users within the same workspace**. This is the default scope, promoting teamwork and reusability of common application images across your team's projects.
+
+#### Specifying Package Scope
+
+By default, when you run `shoc build`, your Package will be created with `workspace` scope. If you wish to explicitly build a Package with `user` scope, you can specify it using the `--scope` flag:
+
+```bash
+shoc --scope user build
+```
+
+This command ensures that the resulting Package will only be accessible from your user account.

@@ -1,0 +1,119 @@
+# Running
+
+This page details the process of submitting your built Packages as Jobs to a cluster managed by Shoc Platform. The primary tool for this is the `shoc run` command.
+
+---
+
+### The `shoc run` Command
+
+As previously mentioned, the `shoc run` command is your main interface for initiating a job. It is intelligent enough to first ensure that a Package for your project is built. If no Package exists, or if your local code has changed since the last build, `shoc run` will automatically trigger the build process before submitting the job.
+
+**Working Directory:**
+Both `shoc build` and `shoc run` commands operate on the current working directory by default. This means they look for `build.shoc.yaml` and `run.shoc.yaml` (if applicable) in the directory where you execute the command. You can override this behavior by using the `-d` or `--dir` optional command-line option to specify a different project directory.
+
+```bash
+# Run a job from a different directory
+shoc run -d /path/to/my/other-project
+```
+
+### The `run.shoc.yaml` Manifest
+
+To submit a job, in addition to your `build.shoc.yaml` (which defines the Package), you will typically use a `run.shoc.yaml` file. This manifest defines the specific parameters and configuration for your job submission.
+
+Here is a comprehensive example of how a `run.shoc.yaml` manifest can look, along with explanations for each field:
+
+```yaml
+# mandatory: the cluster for the job to be submitted on. This must match a cluster name configured in your workspace.
+cluster: my-cluster
+
+# optional: a friendly name for your job, useful for identification in the UI and CLI lists.
+name: my-first-shoc-job
+
+# optional: a description for your job, providing more context for future reference.
+description: "Training a small model on a single GPU using my-cluster."
+
+# optional: a set of labels to categorize your job for easier navigation, filtering, and organization.
+labels: ['training', 'project-x', 'gpu']
+
+# optional: extra arguments to be passed directly to the entrypoint of your container.
+# These arguments are appended after the entrypoint command defined in your build.shoc.yaml.
+args: ['--epochs', '10', '--batch-size', '32']
+
+# optional: job replications configuration for creating job arrays.
+# By default, a job is a single task (replicas: 1).
+array:
+  # optional: the number of equivalent tasks (replicas) to submit within this single Shoc Job.
+  replicas: 4
+  # optional: the name of the environment variable that will contain the index of the current task (0 to replicas-1).
+  # Default: SHOC_JOB_ARRAY_INDEXER
+  indexer: MY_TASK_INDEX
+
+  # optional: the name of the environment variable that will contain the total number of tasks in the array.
+  # Default: SHOC_JOB_ARRAY_COUNT
+  counter: MY_TOTAL_TASKS
+
+# optional: secrets and environment variable overrides to inject into the job's container runtime.
+env:
+  # optional: a list of secret names to fetch from Shoc Platform's secret manager and inject as environment variables.
+  use: ['MY_API_KEY', 'DB_PASSWORD']
+  # optional: a map of custom environment variables to override or define directly within the job's container.
+  override:
+    CUSTOM_MODEL_PATH: '/data/models'
+    DEBUG_MODE: 'true'
+
+# optional: the amount of resources to be dedicated to each replica (task) of the job.
+# These are requests for resources that Kubernetes will try to satisfy.
+resources:
+  # optional: the amount of CPU requested. e.g., '1000m' for 1 CPU core, '0.5' for half a core.
+  cpu: 1000m
+  # optional: the amount of memory requested. e.g., '1Gi' for 1 gigabyte, '512Mi' for 512 megabytes.
+  memory: 1Gi
+  # optional: the amount of Nvidia GPU requested. This requires the NVIDIA GPU Operator to be installed on the cluster.
+  nvidiaGpu: 1
+
+# optional: job runtime-specific configurations.
+# This section is used for advanced tuning depending on the Package's runtime type (e.g., 'mpi').
+spec:
+  # This field would contain specific configuration for an MPI job.
+  mpi: # ... (see MPI specific configuration below)
+```
+
+As you can see, the `run.shoc.yaml` manifest offers granular control over various aspects of your job submission, from basic cluster selection to detailed resource allocation and environment variable management. However, for the simplest `function` runtime jobs, specifying just the `cluster` might be sufficient.
+
+### Runtime-Specific Configuration (`spec` section)
+
+While the top-level `run.shoc.yaml` fields cover general job parameters, the `spec` section allows for fine-tuning based on the job's runtime type (e.g., `function` or `mpi`). For `function` runtimes, typically no `spec` configuration is needed. However, for more complex scenarios, particularly MPI workloads, the `spec` section becomes crucial for optimal resource allocation and job behavior.
+
+#### Example: MPI Runtime Specification
+
+When running a Package built with an `mpi` template, you can define specific parameters for the MPI runtime within the `spec.mpi` section of your `run.shoc.yaml`:
+
+```yaml
+# optional: the job runtime specification based on the type
+spec:
+  # optional: only if using MPI runtime, this block configures MPI-specific parameters.
+  mpi:
+    # optional: configure the worker 'nodes' where your MPI tasks (processes) will run.
+    workers:
+      # optional: you may specify the exact number of worker pods (nodes) you need.
+      # Leave blank for dynamic allocation based on total resources or defaults.
+      replicas: 1
+      # optional: the amount of resources to dedicate to each worker pod.
+      # If not given, resources will be deduced from the top-level 'resources' definition or system defaults.
+      resources:
+        cpu: 4     # Request 4 CPU cores for each worker.
+        memory: 4Gi # Request 4 GB of memory for each worker.
+    # optional: configure a dedicated launcher 'node' for your MPI task.
+    # The launcher typically coordinates the MPI processes.
+    launcher:
+      # optional: set to 'true' to use a dedicated pod solely for the MPI launcher.
+      # If 'false' or omitted, one of the worker pods will also serve as the launcher.
+      dedicated: true
+      # optional: specify resources for your launcher node.
+      resources:
+        cpu: 1    # Request 1 CPU core for the launcher.
+        memory: 1Gi # Request 1 GB of memory for the launcher.
+```
+
+**Resource Allocation Note:**
+Resource allocation within MPI jobs can be managed through a combination of the top-level `resources` definition and the more granular `spec.mpi.workers.resources` and `spec.mpi.launcher.resources`. If resources are not explicitly defined at any level, Shoc Platform will apply sensible defaults. The platform provides flexibility to allocate resources either statically (by specifying exact values) or dynamically (by omitting values and letting the system deduce based on available capacity or configured limits).
