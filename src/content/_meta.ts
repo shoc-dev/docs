@@ -3,7 +3,10 @@ import { MetaRecord } from "nextra"
 const pages: MetaRecord = {
   index: '',
   installation: '',
-  configuration: ''
+  configuration: '',
+  clusters: '',
+  jobs: '',
+  secrets: ''
 }
 
 export default pages
