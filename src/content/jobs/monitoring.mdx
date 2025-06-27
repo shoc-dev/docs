@@ -1,0 +1,118 @@
+import { Callout } from 'nextra/components'
+
+# Monitoring
+
+Once a job is successfully submitted to Shoc Platform, the system creates a Job entity and one or more associated Tasks. A Job, as defined previously, represents a collection of tasks. By default, every Job has at least one Task associated with it.
+
+---
+
+### Job and Task Lifecycles and Statuses
+
+Both Jobs and individual Tasks within a Job have a specific status that indicates their current state and helps you track their progress through the execution lifecycle.
+
+#### Task Statuses
+
+A task progresses through different statuses during its lifecycle. Here's a detailed explanation of each:
+
+| Status      | Description                                                                 |
+| :---------- | :-------------------------------------------------------------------------- |
+| `created`   | The task has been created in Shoc Platform but not yet scheduled for submission to a Kubernetes cluster. |
+| `pending`   | The task has been successfully submitted to a Kubernetes cluster but is not yet running (e.g., waiting for resources or container image pull). |
+| `running`   | The task has started its execution inside the Kubernetes cluster.           |
+| `succeeded` | The task completed its execution successfully. This is a **terminal** status. |
+| `failed`    | The task encountered an error and terminated unsuccessfully. This is a **terminal** status. |
+| `cancelled` | The task's execution was intentionally stopped by a user or system action. This is a **terminal** status. |
+
+#### Job Statuses
+
+A job's status reflects the collective state of its associated tasks.
+
+| Status            | Description                                                                                                                              |
+| :---------------- | :--------------------------------------------------------------------------------------------------------------------------------------- |
+| `created`         | The job has just been created in Shoc Platform.                                                                                          |
+| `pending`         | At least one of the job's tasks is in `pending` status.                                                                                  |
+| `running`         | At least one of the job's tasks is in `running` status.                                                                                  |
+| `succeeded`       | All tasks associated with the job completed successfully. This is a **terminal** status.                                                 |
+| `failed`          | All tasks associated with the job failed, or some tasks failed and no tasks succeeded. This is a **terminal** status.                  |
+| `cancelled`       | The job and all its tasks were intentionally stopped/canceled by a user or system action. This is a **terminal** status.               |
+| `partially_succeeded` | At least one task within the job has `succeeded`, and at least one task has `failed`. This is a **terminal** status and only applies to job arrays. |
+
+<Callout type="info" emoji="🔒">
+**Job Isolation:**
+For each submitted job, Shoc Platform creates an isolated namespace within the Kubernetes cluster. All tasks associated with that job run inside this dedicated namespace, ensuring strict separation and preventing jobs from inadvertently accessing or interfering with each other's data or resources.
+</Callout>
+
+### Monitoring Jobs and Tasks via CLI
+
+While you can monitor the status and details of your jobs and tasks through the Shoc Platform web UI, the Shoc CLI offers powerful commands for real-time monitoring and inspection directly from your terminal.
+
+#### Listing Jobs
+
+To display all jobs within your current workspace that are accessible to your user account, use the `shoc jobs` command:
+
+```bash
+shoc jobs
+```
+
+You can use various options to filter the results and focus on specific jobs:
+
+* `--page <number>`: Specify the page number for paginated results (default: `0`).
+* `--size <number>`: Define the number of jobs per page (default: `10`).
+* `--status <string>`: Filter jobs by a specific status (e.g., `--status running`, `--status failed`).
+* `--scope <string>`: Filter by package scope (`user` or `workspace`).
+* `--all`: Display all jobs in the workspace, overriding user-specific filtering.
+
+Example:
+```bash
+shoc jobs --status running --all --size 20
+```
+
+#### Inspecting Job Details
+
+To view comprehensive details of a particular job, use the `shoc jobs details` command with the job's ID:
+
+```bash
+shoc jobs details -j N
+```
+Replace `N` with the numerical ID of the job you wish to inspect.
+
+#### Listing Tasks within a Job
+
+To see a list of all tasks associated with a specific job, use the `shoc jobs tasks` command:
+
+```bash
+shoc jobs tasks -j N
+```
+Again, replace `N` with the job's ID. This will show each task's status and its individual ID.
+
+#### Watching Job Logs
+
+One of the most critical aspects of monitoring is reviewing the logs generated by your jobs. Shoc Platform allows you to stream logs directly from the CLI.
+
+* **Logs for the First Task:**
+    To watch the logs of the first (or only) task of a job, use:
+
+    ```bash
+    shoc logs -j N
+    ```
+    Replace `N` with the job's ID.
+
+* **Logs for a Specific Task:**
+    To watch the logs of a specific task within a job array, use the `-t` or `--task` option:
+
+    ```bash
+    shoc logs -j N -t M
+    ```
+    Replace `N` with the job's ID and `M` with the specific task's ID.
+
+<Callout type="warning" emoji="⚠️">
+**Log Availability:**
+Logs are streamed directly from the underlying Kubernetes cluster. This means logs are only available for tasks that are currently running or whose logs are still retained by the cluster. If a job or task has not yet started, or if it has already been cleaned up from the cluster (e.g., after successful completion and subsequent garbage collection), its logs may no longer be available via the `shoc logs` command.
+</Callout>
+
+For a complete list of all available options for job and task management, you can always refer to the CLI help:
+
+```bash
+shoc jobs --help
+shoc logs --help
+```

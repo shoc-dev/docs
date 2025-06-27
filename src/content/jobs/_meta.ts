@@ -3,7 +3,8 @@ import { MetaRecord } from "nextra"
 const pages: MetaRecord = {
   templates: '',
   packages: '',
-  running: ''
+  running: '',
+  monitoring: ''
 }
 
 export default pages
